@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N88WP Performance Calculator — 1978 Piper Lance II</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --blue: #58a6ff;
+      --amber: #e3b341;
+      --purple: #bc8cff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1c2333 0%, #0d1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .tail-number {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--amber);
+      letter-spacing: 2px;
+    }
+    .aircraft-info { line-height: 1.3; }
+    .aircraft-info .model { font-size: 0.95rem; color: var(--muted); }
+    .aircraft-info .type { font-size: 0.8rem; color: var(--muted); }
+
+    main { max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+    /* ── Inputs ── */
+    .inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .input-group { display: flex; flex-direction: column; gap: 4px; }
+    .input-group label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .input-row { display: flex; align-items: center; gap: 8px; }
+    .input-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--amber);
+      height: 4px;
+    }
+    .val-badge {
+      min-width: 68px;
+      text-align: right;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .radio-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .radio-group label {
+      cursor: pointer;
+      padding: 3px 10px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.78rem;
+      transition: background .15s, border-color .15s;
+    }
+    .radio-group input { display: none; }
+    .radio-group input:checked + label {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: #000;
+      font-weight: 700;
+    }
+
+    /* ── Safety Margin Banner ── */
+    .safety-banner {
+      background: var(--surface);
+      border: 1px solid var(--amber);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .safety-banner .label { font-size: 0.78rem; color: var(--amber); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+    .safety-banner input[type="range"] { flex: 1; accent-color: var(--amber); }
+    .safety-badge {
+      min-width: 50px;
+      text-align: center;
+      background: var(--amber);
+      color: #000;
+      font-weight: 800;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 1rem;
+    }
+    .safety-note { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+
+    /* ── DA Hero ── */
+    .da-hero {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      text-align: center;
+    }
+    .da-item .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
+    .da-item .value { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .da-item .unit { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── Results Grid ── */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .card-header {
+      background: var(--surface2);
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+    }
+    .card-header .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .card-body { padding: 12px 14px; }
+
+    .perf-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .perf-row:last-child { border-bottom: none; }
+    .perf-label { font-size: 0.8rem; color: var(--muted); }
+    .perf-value { font-size: 0.95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .perf-unit { font-size: 0.72rem; color: var(--muted); margin-left: 3px; }
+
+    .big-num { font-size: 1.4rem; font-weight: 800; }
+
+    .stall-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .stall-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .stall-box .sl { font-size: 0.68rem; color: var(--muted); margin-bottom: 2px; }
+    .stall-box .sv { font-size: 1.25rem; font-weight: 700; }
+
+    .speed-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .speed-table th, .speed-table td {
+      padding: 4px 6px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .speed-table th { color: var(--muted); font-weight: 600; }
+    .speed-table tr:last-child td { border-bottom: none; }
+
+    .seg-ctrl { display: flex; gap: 0; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .seg-ctrl button {
+      flex: 1;
+      padding: 5px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .seg-ctrl button.active {
+      background: var(--amber);
+      color: #000;
+      font-weight: 700;
+    }
+
+    .margin-highlight { font-size: 0.65rem; color: var(--amber); margin-left: 4px; }
+
+    .warn { color: var(--yellow); }
+    .danger { color: var(--red); }
+    .ok { color: var(--green); }
+    .info { color: var(--blue); }
+    .amber { color: var(--amber); }
+
+    footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 24px;
+    }
+
+    @media (max-width: 600px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .tail-number { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="tail-number">N88WP</div>
+  </div>
+  <div class="aircraft-info">
+    <div style="font-size:1.1rem;font-weight:700;">1978 Piper Lance II</div>
+    <div class="model">PA-32RT-300 · IO-540-K Series · 300 HP</div>
+    <div class="type">MTOW 3600 lbs · 94 gal usable · Retractable Gear</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Inputs ── -->
+  <div class="inputs-grid">
+
+    <div class="input-group">
+      <label>Gross Weight</label>
+      <div class="input-row">
+        <input type="range" id="weight" min="2200" max="3600" step="10" value="3400" />
+        <span class="val-badge"><span id="weightVal">3400</span> lbs</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Usable Fuel</label>
+      <div class="input-row">
+        <input type="range" id="fuel" min="0" max="94" step="1" value="90" />
+        <span class="val-badge"><span id="fuelVal">90</span> gal</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Airport Pressure Altitude</label>
+      <div class="input-row">
+        <input type="range" id="pressAlt" min="-1000" max="10000" step="100" value="1000" />
+        <span class="val-badge"><span id="pressAltVal">1000</span> ft</span>
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted)">Used for density alt, T/O &amp; landing</div>
+    </div>
+
+    <div class="input-group">
+      <label>Cruise Altitude</label>
+      <div class="input-row">
+        <input type="range" id="cruiseAlt" min="0" max="14000" step="100" value="8000" />
+        <span class="val-badge"><span id="cruiseAltVal">8000</span> ft</span>
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted)">Used for cruise, climb &amp; glide range</div>
+    </div>
+
+    <div class="input-group">
+      <label>Outside Air Temp</label>
+      <div class="input-row">
+        <input type="range" id="oat" min="-30" max="50" step="1" value="15" />
+        <span class="val-badge"><span id="oatVal">15</span>°C</span>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);" id="oatF"></div>
+    </div>
+
+    <div class="input-group">
+      <label>Wind Speed</label>
+      <div class="input-row">
+        <input type="range" id="windSpeed" min="0" max="30" step="1" value="0" />
+        <span class="val-badge"><span id="windSpeedVal">0</span> kts</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Wind Component</label>
+      <div class="radio-group" id="windDir">
+        <input type="radio" name="windDir" id="wdHead" value="head" checked /><label for="wdHead">Headwind</label>
+        <input type="radio" name="windDir" id="wdCalm" value="calm" /><label for="wdCalm">Calm</label>
+        <input type="radio" name="windDir" id="wdTail" value="tail" /><label for="wdTail">Tailwind</label>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Cruise Power</label>
+      <div class="radio-group" id="powerPct">
+        <input type="radio" name="pwr" id="p55" value="55" /><label for="p55">55%</label>
+        <input type="radio" name="pwr" id="p65" value="65" checked /><label for="p65">65%</label>
+        <input type="radio" name="pwr" id="p75" value="75" /><label for="p75">75%</label>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Cruise Mixture</label>
+      <div class="radio-group" id="mixture">
+        <input type="radio" name="mix" id="mixEcon" value="econ" checked /><label for="mixEcon">Economy (Peak EGT)</label>
+        <input type="radio" name="mix" id="mixSpd" value="speed" /><label for="mixSpd">Speed (100°F Rich)</label>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Destination Field Elevation</label>
+      <div class="input-row">
+        <input type="range" id="destAlt" min="0" max="12000" step="100" value="0" />
+        <span class="val-badge"><span id="destAltVal">0</span> ft</span>
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted)">Used for glide AGL &amp; landing perf</div>
+    </div>
+
+  </div>
+
+  <!-- ── Safety Margin ── -->
+  <div class="safety-banner">
+    <span class="label">⚠ Safety Margin</span>
+    <input type="range" id="safetyMargin" min="0" max="30" step="1" value="10" />
+    <span class="safety-badge" id="safetyBadge">10%</span>
+    <span class="safety-note">Applied to all distances · Reduces range/climb</span>
+  </div>
+
+  <!-- ── DA Hero ── -->
+  <div class="da-hero">
+    <div class="da-item">
+      <div class="label">Density Altitude</div>
+      <div class="value amber" id="da">—</div>
+      <div class="unit">feet</div>
+    </div>
+    <div class="da-item">
+      <div class="label">ISA Deviation</div>
+      <div class="value" id="isaDev">—</div>
+      <div class="unit">°C from standard</div>
+    </div>
+    <div class="da-item">
+      <div class="label">TAS ÷ IAS Factor</div>
+      <div class="value" id="tasFactor">—</div>
+      <div class="unit">TAS = IAS × factor</div>
+    </div>
+    <div class="da-item">
+      <div class="label">Fuel Weight</div>
+      <div class="value info" id="fuelWeight">—</div>
+      <div class="unit">lbs of fuel</div>
+    </div>
+    <div class="da-item">
+      <div class="label">Payload + Pax</div>
+      <div class="value" id="payload">—</div>
+      <div class="unit">lbs available</div>
+    </div>
+    <div class="da-item">
+      <div class="label">Std Temp at PA</div>
+      <div class="value" id="stdTemp">—</div>
+      <div class="unit">°C (ISA)</div>
+    </div>
+  </div>
+
+  <!-- ── Result Cards ── -->
+  <div class="results-grid">
+
+    <!-- Stall Speeds -->
+    <div class="card">
+      <div class="card-header"><div class="dot" style="background:var(--red)"></div>Stall Speeds</div>
+      <div class="card-body">
+        <div class="stall-grid">
+          <div class="stall-box">
+            <div class="sl">Vs<sub>0</sub> · Full Flaps · 0° Bank</div>
+            <div class="sv ok" id="vs0">—</div>
+            <div class="unit">KIAS</div>
+          </div>
+          <div class="stall-box">
+            <div class="sl">Vs<sub>1</sub> · Flaps Up · 0° Bank</div>
+            <div class="sv warn" id="vs1">—</div>
+            <div class="unit">KIAS</div>
+          </div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Bank angle × stall (Vs<sub>1</sub>)</div>
+        <table class="speed-table">
+          <thead><tr><th>Bank</th><th>Flaps Up</th><th>Full Flaps</th></tr></thead>
+          <tbody id="stallBankTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Reference Speeds -->
+    <div class="card">
+      <div class="card-header"><div class="dot" style="background:var(--blue)"></div>Reference Speeds</div>
+      <div class="card-body">
+        <table class="speed-table">
+          <thead><tr><th>Speed</th><th>Value</th><th>Description</th></tr></thead>
+          <tbody id="refSpeedsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Takeoff Performance -->
+    <div class="card" style="grid-column: span 2; min-width: 0;">
+      <div class="card-header"><div class="dot" style="background:var(--green)"></div>Takeoff Performance</div>
+      <div class="card-body">
+        <div class="seg-ctrl" id="toFlapsCtrl">
+          <button class="active" data-val="short" onclick="setToFlap(this)">Short Field (25° Flaps)</button>
+          <button data-val="normal" onclick="setToFlap(this)">Normal (Flaps Up)</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Ground Roll</div>
+            <div class="big-num ok" id="toGR">—</div>
+            <div class="unit">feet <span class="margin-highlight" id="toGRmargin"></span></div>
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Over 50 ft Obstacle</div>
+            <div class="big-num warn" id="toObs">—</div>
+            <div class="unit">feet <span class="margin-highlight" id="toObsmargin"></span></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div class="perf-row"><span class="perf-label">Liftoff Speed</span><span class="perf-value amber" id="toLiftoff">—</span></div>
+          <div class="perf-row"><span class="perf-label">Speed @ 50 ft</span><span class="perf-value" id="toV50">—</span></div>
+          <div class="perf-row"><span class="perf-label">Conditions</span><span class="perf-value" id="toCondNote" style="font-size:0.72rem;color:var(--muted);"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Landing Performance -->
+    <div class="card" style="grid-column: span 2; min-width: 0;">
+      <div class="card-header"><div class="dot" style="background:var(--yellow)"></div>Landing Performance</div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Ground Roll</div>
+            <div class="big-num ok" id="ldGR">—</div>
+            <div class="unit">feet <span class="margin-highlight" id="ldGRmargin"></span></div>
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Over 50 ft Obstacle</div>
+            <div class="big-num warn" id="ldObs">—</div>
+            <div class="unit">feet <span class="margin-highlight" id="ldObsmargin"></span></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+          <div class="perf-row"><span class="perf-label">Approach Speed</span><span class="perf-value amber">75 KIAS</span></div>
+          <div class="perf-row"><span class="perf-label">Conditions</span><span class="perf-value" style="font-size:0.72rem;color:var(--muted);">Full flaps · Power off · Max braking</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Climb Performance -->
+    <div class="card">
+      <div class="card-header"><div class="dot" style="background:var(--purple)"></div>Climb Performance</div>
+      <div class="card-body">
+        <div class="seg-ctrl" id="climbGearCtrl">
+          <button class="active" data-val="up" onclick="setClimbGear(this)">Gear Up (Vy 92 KIAS)</button>
+          <button data-val="down" onclick="setClimbGear(this)">Gear Down (87 KIAS)</button>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Rate of Climb</span>
+          <span class="perf-value purple" id="roc">—</span>
+          <span class="perf-unit">fpm</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Time to Cruise Alt</span>
+          <span class="perf-value" id="climbTime">—</span>
+          <span class="perf-unit">min</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Fuel to Climb</span>
+          <span class="perf-value" id="climbFuel">—</span>
+          <span class="perf-unit">gal</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Distance to Climb</span>
+          <span class="perf-value" id="climbDist">—</span>
+          <span class="perf-unit">NM</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Service Ceiling (100 fpm)</span>
+          <span class="perf-value" id="svcCeiling">—</span>
+          <span class="perf-unit">ft</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cruise -->
+    <div class="card">
+      <div class="card-header"><div class="dot" style="background:var(--blue)"></div>Cruise Performance</div>
+      <div class="card-body">
+        <div class="perf-row">
+          <span class="perf-label">True Airspeed (TAS)</span>
+          <span class="perf-value blue big-num" id="cruiseTas">—</span>
+          <span class="perf-unit">KTAS</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Fuel Consumption</span>
+          <span class="perf-value" id="cruiseFF">—</span>
+          <span class="perf-unit">GPH</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Endurance (with 45-min reserve)</span>
+          <span class="perf-value" id="enduranceR">—</span>
+          <span class="perf-unit">hrs</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Endurance (no reserve)</span>
+          <span class="perf-value" id="enduranceNR">—</span>
+          <span class="perf-unit">hrs</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Range (with 45-min reserve)</span>
+          <span class="perf-value green" id="rangeR">—</span>
+          <span class="perf-unit">NM</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Range (no reserve)</span>
+          <span class="perf-value" id="rangeNR">—</span>
+          <span class="perf-unit">NM</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Reserve Fuel (45 min @ 45%)</span>
+          <span class="perf-value" id="reserveFuel">—</span>
+          <span class="perf-unit">gal</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Glide -->
+    <div class="card">
+      <div class="card-header"><div class="dot" style="background:var(--amber)"></div>Emergency Glide</div>
+      <div class="card-body">
+        <div class="perf-row">
+          <span class="perf-label">Cruise Alt − Destination Elev (AGL)</span>
+          <span class="perf-value" id="glideAGL">—</span>
+          <span class="perf-unit">ft</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Max Glide Range</span>
+          <span class="perf-value amber big-num" id="glideRange">—</span>
+          <span class="perf-unit">NM <span class="margin-highlight" id="glideMargin"></span></span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Glide Time</span>
+          <span class="perf-value" id="glideTime">—</span>
+          <span class="perf-unit">min</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Glide Speed</span>
+          <span class="perf-value">92</span>
+          <span class="perf-unit">KIAS · Prop Full Decrease · Gear Up</span>
+        </div>
+        <div class="perf-row">
+          <span class="perf-label">Approx L/D Ratio</span>
+          <span class="perf-value">9.6 : 1</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /results-grid -->
+</main>
+
+<footer>
+  Performance data from PA-32RT-300 Lance II POH (Report VB-890, January 1978).
+  All values are planning estimates — always cross-reference with your actual POH.
+  Tailwind, uphill runway, grass or wet surfaces increase distances significantly.
+  N88WP · PA-32RT-300 · IO-540-K Series · 300 HP
+</footer>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// PA-32RT-300 LANCE II PERFORMANCE DATA — FROM POH (VB-890, 1978)
+// ══════════════════════════════════════════════════════════════════
+
+const EMPTY_WEIGHT = 2143; // lbs, typical for equipped PA-32RT-300
+
+const SPEEDS = {
+  Vs0_maxGross: 61,   // KIAS, full flaps, gear down, 3600 lbs
+  Vs1_maxGross: 68,   // KIAS, flaps up, gear down, 3600 lbs
+  Vx: 87,             // Best angle of climb (gear up, flaps up)
+  Vy: 92,             // Best rate of climb (gear up, flaps up)
+  Vg: 92,             // Best glide (gear up, prop full dec.)
+  Va_maxGross: 129,   // Maneuvering speed at 3600 lbs
+  Vfe: 109,           // Max flap extension speed (all positions)
+  Vno: 167,           // Max structural cruise
+  Vne: 194,           // Never exceed
+  Vapproach: 75,      // Normal approach speed
+};
+
+// ── TAKEOFF SHORT FIELD (Flaps 25°, 2700 RPM, full throttle, paved dry) ──
+// Ground Roll (ft) at ISA temp, 0 wind  [weight][alt_idx]
+const TO_SF_WEIGHTS = [2400, 2800, 3200, 3600];
+const TO_ALTS = [0, 2000, 4000, 6000, 8000];
+const TO_SF_GR = [
+  [465,  530,  610,  705,  820],   // 2400 lbs
+  [625,  715,  820,  950, 1105],   // 2800 lbs
+  [790,  905, 1040, 1205, 1400],   // 3200 lbs
+  [935, 1075, 1240, 1435, 1670],   // 3600 lbs
+];
+const TO_SF_50FT = [
+  [ 810,  930, 1070, 1235, 1440],  // 2400 lbs
+  [1060, 1215, 1400, 1615, 1885],  // 2800 lbs
+  [1325, 1520, 1755, 2030, 2370],  // 3200 lbs
+  [1605, 1845, 2130, 2470, 2885],  // 3600 lbs
+];
+// Takeoff speeds [KIAS] by weight index: [liftoff, over 50ft]
+const TO_SF_SPEEDS = [[62,62],[62,63],[63,64],[63,65]];
+
+// ── TAKEOFF NORMAL (Flaps Up, 2700 RPM, full throttle, paved dry) ──
+const TO_NM_GR = [
+  [ 680,  775,  890, 1025, 1195],  // 2400 lbs
+  [ 850,  970, 1115, 1285, 1495],  // 2800 lbs
+  [1055, 1205, 1385, 1600, 1865],  // 3200 lbs
+  [1265, 1445, 1660, 1920, 2240],  // 3600 lbs
+];
+const TO_NM_50FT = [
+  [1145, 1305, 1500, 1730, 2020],  // 2400 lbs
+  [1470, 1680, 1930, 2230, 2605],  // 2800 lbs
+  [1830, 2090, 2405, 2780, 3255],  // 3200 lbs
+  [2195, 2510, 2890, 3345, 3915],  // 3600 lbs
+];
+const TO_NM_SPEEDS = [[66,68],[67,70],[69,72],[70,74]];
+
+// ── LANDING (Full flaps, 75 KIAS, power off, max braking, paved dry) ──
+const LD_WEIGHTS = [2400, 2800, 3200, 3600];
+const LD_ALTS    = [0, 2000, 4000, 6000, 8000];
+const LD_GR = [
+  [585,  615,  650,  685,  720],   // 2400 lbs
+  [665,  700,  740,  780,  820],   // 2800 lbs
+  [750,  790,  835,  880,  930],   // 3200 lbs
+  [840,  885,  935,  985, 1040],   // 3600 lbs
+];
+const LD_50FT = [
+  [1115, 1175, 1240, 1310, 1390],  // 2400 lbs
+  [1265, 1340, 1415, 1500, 1590],  // 2800 lbs
+  [1435, 1515, 1600, 1700, 1805],  // 3200 lbs
+  [1610, 1700, 1795, 1905, 2025],  // 3600 lbs
+];
+
+// ── RATE OF CLIMB — Gear Up, 92 KIAS, 2700 RPM, full throttle ──
+const CLIMB_UP_WEIGHTS = [2800, 3200, 3600];
+const CLIMB_UP_ALTS    = [0, 2000, 4000, 6000, 8000, 10000, 12000, 14000];
+const CLIMB_UP_ROC = [
+  [1465, 1340, 1210, 1080,  945,  815,  670,  520],  // 2800 lbs
+  [1275, 1160, 1040,  925,  805,  685,  555,  415],   // 3200 lbs
+  [1085,  980,  875,  775,  670,  560,  445,  320],   // 3600 lbs
+];
+
+// ── RATE OF CLIMB — Gear Down, 87 KIAS, 2700 RPM, full throttle ──
+const CLIMB_DN_WEIGHTS = [2800, 3200, 3600];
+const CLIMB_DN_ALTS    = [0, 2000, 4000, 6000, 8000];
+const CLIMB_DN_ROC = [
+  [1060,  905,  755,  595,  430],  // 2800 lbs
+  [ 890,  750,  610,  465,  310],  // 3200 lbs
+  [ 725,  595,  465,  325,  180],  // 3600 lbs
+];
+
+// ── CRUISE TAS (KTAS) — Economy (Peak EGT, 2400 RPM) ──
+const CRUISE_ALTS = [0, 2000, 4000, 6000, 8000, 10000, 12000, 14000];
+const CRUISE_ECON = {
+  55: { tas: [110, 116, 122, 127, 132, 136, 140, 144], ff: 11.9 },
+  65: { tas: [123, 130, 135, 140, 145, 149, 153, 156], ff: 13.8 },
+  75: { tas: [136, 142, 148, 152, 156, 159, 162, 164], ff: 16.0 },
+};
+// ── CRUISE TAS — Speed (100°F rich, up to 2700 RPM) ──
+const CRUISE_SPEED = {
+  55: { tas: [112, 118, 124, 129, 134, 138, 143, 147], ff: 14.0 },
+  65: { tas: [127, 133, 138, 143, 148, 152, 156, 159], ff: 16.0 },
+  75: { tas: [140, 146, 151, 155, 158, 161, 164, 166], ff: 18.0 },
+};
+
+// Fuel, time, distance to climb (cumulative from SL) at 3600 lbs, ISA, 92 KIAS gear-up
+// [alt_ft, fuel_gal, time_min, dist_nm]
+const CLIMB_PROFILE = [
+  [    0,  0.0,  0.0,  0.0],
+  [ 2000,  0.7,  2.2,  4.0],
+  [ 4000,  1.5,  4.6,  8.5],
+  [ 6000,  2.6,  7.5, 13.5],
+  [ 8000,  3.8, 10.8, 19.5],
+  [10000,  5.4, 14.8, 27.5],
+  [12000,  7.2, 19.5, 36.5],
+  [14000,  9.5, 26.0, 48.0],
+];
+
+// Glide L/D ratio (gear up, prop full decrease, 92 KIAS)
+const GLIDE_LD = 9.6;
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ══════════════════════════════════════════════════════════════════
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+// Bilinear interpolation on a 2D table
+// wtable = array of weight values (ascending)
+// atable = array of altitude values (ascending)
+// data   = data[weight_idx][alt_idx]
+function bilinear(w, alt, wtable, atable, data) {
+  // clamp
+  w   = Math.max(wtable[0], Math.min(wtable[wtable.length-1], w));
+  alt = Math.max(atable[0], Math.min(atable[atable.length-1], alt));
+
+  let wi = 0;
+  for (let i = 0; i < wtable.length - 1; i++) if (w >= wtable[i]) wi = i;
+  let ai = 0;
+  for (let i = 0; i < atable.length - 1; i++) if (alt >= atable[i]) ai = i;
+
+  const wt = wtable[wi+1] != null ? (w - wtable[wi]) / (wtable[wi+1] - wtable[wi]) : 0;
+  const at = atable[ai+1] != null ? (alt - atable[ai]) / (atable[ai+1] - atable[ai]) : 0;
+
+  const wt2 = Math.min(1, Math.max(0, wt));
+  const at2 = Math.min(1, Math.max(0, at));
+
+  const wi2 = Math.min(wi+1, wtable.length-1);
+  const ai2 = Math.min(ai+1, atable.length-1);
+
+  const v00 = data[wi][ai];
+  const v10 = data[wi2][ai];
+  const v01 = data[wi][ai2];
+  const v11 = data[wi2][ai2];
+
+  return lerp(lerp(v00, v10, wt2), lerp(v01, v11, wt2), at2);
+}
+
+// Linear interpolation on 1D table
+function interp1D(x, xtable, ytable) {
+  x = Math.max(xtable[0], Math.min(xtable[xtable.length-1], x));
+  let i = 0;
+  for (let j = 0; j < xtable.length - 1; j++) if (x >= xtable[j]) i = j;
+  const t = (xtable[i+1] != null) ? (x - xtable[i]) / (xtable[i+1] - xtable[i]) : 0;
+  return lerp(ytable[i], ytable[Math.min(i+1, ytable.length-1)], Math.min(1, Math.max(0, t)));
+}
+
+// Density altitude (ft) from pressure altitude (ft) and OAT (°C)
+function calcDA(pa, oat) {
+  const isaTemp = 15 - pa * 0.002;
+  return pa + 118.8 * (oat - isaTemp);
+}
+
+// ISA temperature at pressure altitude
+function isaAtPA(pa) { return 15 - pa * 0.002; }
+
+// ISA deviation
+function isaDeviation(pa, oat) { return oat - isaAtPA(pa); }
+
+// TAS factor: TAS = IAS × factor = IAS × sqrt(ρ₀/ρ) ≈ 1 + DA/34000 (close approx)
+function tasFactor(da) { return 1 + da / 34000; }
+
+// Temperature correction factor for takeoff distances (~2.5% per °C ISA deviation for takeoff)
+function tempCorrTO(pa, oat) {
+  const dev = isaDeviation(pa, oat);
+  return 1 + 0.0045 * dev;
+}
+// Temperature correction factor for landing (~1.2% per °C)
+function tempCorrLD(pa, oat) {
+  const dev = isaDeviation(pa, oat);
+  return 1 + 0.002 * dev;
+}
+
+// Wind correction for takeoff/landing distances
+// Headwind reduces, tailwind increases.
+// POH-based: ~10% per 10 kts headwind reduction, ~25% per 10 kts tailwind increase
+function windCorrTO(windKts, windComp, liftoffKIAS) {
+  if (windComp === 'calm') return 1.0;
+  if (windComp === 'head') return Math.max(0.3, 1 - 0.12 * windKts / 10);
+  if (windComp === 'tail') return 1 + 0.25 * windKts / 10;
+  return 1.0;
+}
+
+// Maneuvering speed scaled by weight
+function vaAtWeight(w) {
+  return Math.round(SPEEDS.Va_maxGross * Math.sqrt(w / 3600));
+}
+
+// Stall speed at weight and bank angle
+function stallSpeed(baseKIAS, w, bankDeg) {
+  const wtFactor = Math.sqrt(w / 3600);
+  const bankRad = bankDeg * Math.PI / 180;
+  const bankFactor = (bankDeg > 0) ? 1 / Math.sqrt(Math.cos(bankRad)) : 1;
+  return Math.round(baseKIAS * wtFactor * bankFactor);
+}
+
+// Interpolate cruise TAS at altitude
+function getCruiseTAS(alt, pwr, mix) {
+  const table = (mix === 'econ') ? CRUISE_ECON : CRUISE_SPEED;
+  const entry = table[pwr] || table[65];
+  return interp1D(alt, CRUISE_ALTS, entry.tas);
+}
+
+function getCruiseFF(pwr, mix) {
+  const table = (mix === 'econ') ? CRUISE_ECON : CRUISE_SPEED;
+  return (table[pwr] || table[65]).ff;
+}
+
+// Interpolate climb profile value at altitude (return interpolated [fuel, time, dist])
+function getClimbProfile(alt) {
+  alt = Math.max(0, Math.min(14000, alt));
+  for (let i = 0; i < CLIMB_PROFILE.length - 1; i++) {
+    const [a0, f0, t0, d0] = CLIMB_PROFILE[i];
+    const [a1, f1, t1, d1] = CLIMB_PROFILE[i+1];
+    if (alt >= a0 && alt <= a1) {
+      const frac = (alt - a0) / (a1 - a0);
+      return {
+        fuel: lerp(f0, f1, frac),
+        time: lerp(t0, t1, frac),
+        dist: lerp(d0, d1, frac),
+      };
+    }
+  }
+  return CLIMB_PROFILE[CLIMB_PROFILE.length-1].slice(1);
+}
+
+// Estimate service ceiling (altitude where ROC = 100 fpm) for current weight
+function calcServiceCeiling(w, gearUp) {
+  const weights = gearUp ? CLIMB_UP_WEIGHTS : CLIMB_DN_WEIGHTS;
+  const alts    = gearUp ? CLIMB_UP_ALTS    : CLIMB_DN_ALTS;
+  const rocData = gearUp ? CLIMB_UP_ROC     : CLIMB_DN_ROC;
+
+  // Find ROC at each altitude for this weight
+  for (let ai = 0; ai < alts.length - 1; ai++) {
+    const roc0 = bilinear(w, alts[ai],   weights, alts, rocData);
+    const roc1 = bilinear(w, alts[ai+1], weights, alts, rocData);
+    if (roc0 >= 100 && roc1 < 100) {
+      // Interpolate to find where ROC = 100
+      const frac = (roc0 - 100) / (roc0 - roc1);
+      return Math.round(lerp(alts[ai], alts[ai+1], frac) / 100) * 100;
+    }
+  }
+  return alts[alts.length-1];
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let state = {
+  weight: 3400, fuel: 90, pa: 1000, oat: 15,
+  cruiseAlt: 8000,
+  windSpeed: 0, windDir: 'head',
+  safetyMargin: 10,
+  pwr: 65, mix: 'econ',
+  destAlt: 0,
+  toFlap: 'short',
+  climbGear: 'up',
+};
+
+// ══════════════════════════════════════════════════════════════════
+// UPDATE ALL RESULTS
+// ══════════════════════════════════════════════════════════════════
+function update() {
+  const { weight, fuel, pa, oat, cruiseAlt, windSpeed, windDir, safetyMargin, pwr, mix, destAlt, toFlap, climbGear } = state;
+  const margin = safetyMargin / 100;
+
+  // ── Density Altitude ──
+  const da = Math.round(calcDA(pa, oat));
+  const isaDev = isaDeviation(pa, oat).toFixed(1);
+  const tf = tasFactor(da).toFixed(3);
+  const stdTempC = isaAtPA(pa).toFixed(1);
+  const fuelWt = Math.round(fuel * 6.0);
+  const payloadAvail = 3600 - EMPTY_WEIGHT - fuelWt;
+
+  set('da', fmt(da) + (da > 6000 ? ' ⚠' : ''), da > 6000 ? 'warn' : da > 3000 ? 'amber' : 'ok');
+  set('isaDev', (isaDev > 0 ? '+' : '') + isaDev + '°C', isaDev > 10 ? 'warn' : 'text');
+  set('tasFactor', tf);
+  set('stdTemp', stdTempC + '°C');
+  set('fuelWeight', fmt(fuelWt));
+  set('payload', fmt(payloadAvail), payloadAvail < 0 ? 'danger' : payloadAvail < 200 ? 'warn' : 'text');
+
+  // ── Stall Speeds ──
+  const vs0 = stallSpeed(SPEEDS.Vs0_maxGross, weight, 0);
+  const vs1 = stallSpeed(SPEEDS.Vs1_maxGross, weight, 0);
+  set('vs0', vs0);
+  set('vs1', vs1);
+  const bankAngles = [0, 15, 30, 45, 60];
+  const tbody = document.getElementById('stallBankTable');
+  tbody.innerHTML = bankAngles.map(b => {
+    const s1 = stallSpeed(SPEEDS.Vs1_maxGross, weight, b);
+    const s0 = stallSpeed(SPEEDS.Vs0_maxGross, weight, b);
+    const cls1 = b >= 60 ? 'danger' : b >= 45 ? 'warn' : '';
+    const cls0 = b >= 60 ? 'danger' : b >= 45 ? 'warn' : '';
+    return `<tr>
+      <td>${b}°</td>
+      <td class="${cls1}" style="font-weight:600">${s1} KIAS</td>
+      <td class="${cls0}" style="font-weight:600">${s0} KIAS</td>
+    </tr>`;
+  }).join('');
+
+  // ── Reference Speeds ──
+  const va = vaAtWeight(weight);
+  const speedsBody = document.getElementById('refSpeedsTable');
+  speedsBody.innerHTML = [
+    ['Vx',    '87 KIAS',            'Best angle of climb (gear up)'],
+    ['Vy',    '92 KIAS',            'Best rate of climb (gear up)'],
+    ['Va',    `${va} KIAS`,         `Maneuvering speed at ${fmt(weight)} lbs`],
+    ['Vfe',   '109 KIAS',           'Max flap extension'],
+    ['Vno',   '167 KIAS',           'Max structural cruise'],
+    ['Vne',   '194 KIAS',           'Never exceed — red line'],
+    ['Vapp',  '75 KIAS',            'Normal approach speed'],
+    ['Best Glide', '92 KIAS',       'Gear up · prop full decrease'],
+  ].map(([sp, val, desc]) =>
+    `<tr><td class="amber" style="font-weight:700;white-space:nowrap">${sp}</td><td style="font-weight:600">${val}</td><td style="color:var(--muted)">${desc}</td></tr>`
+  ).join('');
+
+  // ── Takeoff Performance ──
+  // Density altitude captures both pressure alt + temperature — use as table index
+  const toDA = da;
+  const liftoffSpd = toFlap === 'short' ? 63 : 70;
+  const wtCorr = windCorrTO(windSpeed, windDir, liftoffSpd);
+
+  let toGR_raw, toObs_raw, toLiftSpd, toObsSpd;
+  if (toFlap === 'short') {
+    toGR_raw  = bilinear(weight, toDA, TO_SF_WEIGHTS, TO_ALTS, TO_SF_GR);
+    toObs_raw = bilinear(weight, toDA, TO_SF_WEIGHTS, TO_ALTS, TO_SF_50FT);
+    const wi = weightIdx(weight, TO_SF_WEIGHTS);
+    toLiftSpd = TO_SF_SPEEDS[wi][0];
+    toObsSpd  = TO_SF_SPEEDS[wi][1];
+  } else {
+    toGR_raw  = bilinear(weight, toDA, TO_SF_WEIGHTS, TO_ALTS, TO_NM_GR);
+    toObs_raw = bilinear(weight, toDA, TO_SF_WEIGHTS, TO_ALTS, TO_NM_50FT);
+    const wi = weightIdx(weight, TO_SF_WEIGHTS);
+    toLiftSpd = TO_NM_SPEEDS[wi][0];
+    toObsSpd  = TO_NM_SPEEDS[wi][1];
+  }
+
+  const toGR  = Math.round(toGR_raw  * wtCorr * (1 + margin));
+  const toObs = Math.round(toObs_raw * wtCorr * (1 + margin));
+
+  set('toGR',  fmt(toGR),  toGR  > 3000 ? 'danger' : toGR  > 1800 ? 'warn' : 'ok');
+  set('toObs', fmt(toObs), toObs > 5000 ? 'danger' : toObs > 2500 ? 'warn' : 'ok');
+  setInner('toGRmargin',   margin > 0 ? `+${safetyMargin}% margin` : '');
+  setInner('toObsmargin',  margin > 0 ? `+${safetyMargin}% margin` : '');
+  set('toLiftoff', toLiftSpd + ' KIAS');
+  set('toV50',     toObsSpd  + ' KIAS');
+  setInner('toCondNote', toFlap === 'short' ? 'Paved · Level · Dry · 2700 RPM' : 'Paved · Level · Dry · 2700 RPM');
+
+  // ── Landing Performance ──
+  // Use density altitude as table index (combines PA + temperature effect)
+  const ldDA = da;
+  const ldWtCorr = windCorrTO(windSpeed, windDir, 75); // 75 KIAS approach speed
+
+  const ldGR_raw  = bilinear(weight, ldDA, LD_WEIGHTS, LD_ALTS, LD_GR);
+  const ldObs_raw = bilinear(weight, ldDA, LD_WEIGHTS, LD_ALTS, LD_50FT);
+
+  const ldGR  = Math.round(ldGR_raw  * ldWtCorr * (1 + margin));
+  const ldObs = Math.round(ldObs_raw * ldWtCorr * (1 + margin));
+
+  set('ldGR',  fmt(ldGR),  ldGR  > 2000 ? 'danger' : ldGR  > 1200 ? 'warn' : 'ok');
+  set('ldObs', fmt(ldObs), ldObs > 3000 ? 'danger' : ldObs > 1800 ? 'warn' : 'ok');
+  setInner('ldGRmargin',  margin > 0 ? `+${safetyMargin}% margin` : '');
+  setInner('ldObsmargin', margin > 0 ? `+${safetyMargin}% margin` : '');
+
+  // ── Climb Performance ──
+  const rocWeights = climbGear === 'up' ? CLIMB_UP_WEIGHTS : CLIMB_DN_WEIGHTS;
+  const rocAlts    = climbGear === 'up' ? CLIMB_UP_ALTS    : CLIMB_DN_ALTS;
+  const rocData    = climbGear === 'up' ? CLIMB_UP_ROC     : CLIMB_DN_ROC;
+  // ROC at departure field altitude
+  const roc = Math.round(bilinear(weight, pa, rocWeights, rocAlts, rocData) * (1 - margin));
+
+  // Climb from airport to cruise altitude
+  const climbFrom = pa;
+  const climbTo   = cruiseAlt;
+
+  const profTo   = getClimbProfile(climbTo);
+  const profFrom = getClimbProfile(climbFrom);
+  const climbFuel = Math.max(0, profTo.fuel - profFrom.fuel).toFixed(1);
+  const climbTime = Math.max(0, profTo.time - profFrom.time).toFixed(0);
+  const climbDist = Math.max(0, profTo.dist - profFrom.dist).toFixed(0);
+
+  const svcCeil = calcServiceCeiling(weight, climbGear === 'up');
+
+  set('roc', fmt(roc), roc < 200 ? 'danger' : roc < 500 ? 'warn' : 'purple');
+  set('climbTime', climbTime);
+  set('climbFuel', climbFuel);
+  set('climbDist', climbDist);
+  set('svcCeiling', fmt(svcCeil));
+
+  // ── Cruise Performance ──
+  const cruiseTAS = getCruiseTAS(cruiseAlt, pwr, mix);
+  const ff = getCruiseFF(pwr, mix);
+
+  // Reserve: 45 min at 45% power ≈ 10.8 GPH × 0.75 hr = ~8.1 gal
+  const reserveFF = 10.8;
+  const reserveFuelGal = (45 / 60) * reserveFF;
+  const availFuelNoRes  = fuel;
+  const availFuelWithRes = Math.max(0, fuel - reserveFuelGal);
+
+  const enduranceNR = (availFuelNoRes  / ff) * (1 - margin);
+  const enduranceR  = (availFuelWithRes / ff) * (1 - margin);
+  const rangeNR = enduranceNR * cruiseTAS;
+  const rangeR  = enduranceR  * cruiseTAS;
+
+  set('cruiseTas', Math.round(cruiseTAS));
+  set('cruiseFF',  ff.toFixed(1));
+  set('enduranceNR', enduranceNR.toFixed(1));
+  set('enduranceR',  enduranceR.toFixed(1));
+  set('rangeNR', Math.round(rangeNR));
+  set('rangeR',  Math.round(rangeR), rangeR < 300 ? 'warn' : 'green');
+  set('reserveFuel', reserveFuelGal.toFixed(1));
+
+  // ── Glide Range ──
+  // AGL above destination = cruise altitude minus destination field elevation
+  const agl = Math.max(0, cruiseAlt - destAlt);
+  // TAS at glide altitude using 92 KIAS (best glide speed)
+  const glideTAS = 92 * tasFactor(calcDA(cruiseAlt, oat));
+  const glideRangeNM = (agl / 6076) * GLIDE_LD * (1 - margin);
+  const glideROD = glideTAS * 6076 / 60 / GLIDE_LD; // fpm
+  const glideTimeFinal = agl > 0 ? Math.round(agl / glideROD) : 0;
+
+  set('glideAGL', fmt(agl));
+  set('glideRange', glideRangeNM.toFixed(1), glideRangeNM < 8 ? 'warn' : 'amber');
+  set('glideTime', glideTimeFinal);
+  setInner('glideMargin', margin > 0 ? `-${safetyMargin}% margin` : '');
+}
+
+// ── HELPERS ──
+function fmt(n) { return Math.round(n).toLocaleString(); }
+
+function set(id, val, colorClass) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = val;
+  if (colorClass) {
+    el.className = el.className.replace(/\b(ok|warn|danger|info|amber|blue|green|purple|text)\b/g, '');
+    el.classList.add(colorClass);
+  }
+}
+
+function setInner(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+function weightIdx(w, table) {
+  let best = 0;
+  for (let i = 0; i < table.length; i++) if (w >= table[i]) best = i;
+  return best;
+}
+
+// ── GLOBAL TOGGLES ──
+let _toFlap = 'short';
+let _climbGear = 'up';
+
+function setToFlap(btn) {
+  document.querySelectorAll('#toFlapsCtrl button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.toFlap = btn.dataset.val;
+  update();
+}
+function setClimbGear(btn) {
+  document.querySelectorAll('#climbGearCtrl button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.climbGear = btn.dataset.val;
+  update();
+}
+
+// ── BIND INPUTS ──
+function bindSlider(id, stateKey, displayId, suffix, decimals) {
+  const slider = document.getElementById(id);
+  if (!slider) return;
+  slider.addEventListener('input', () => {
+    const v = parseFloat(slider.value);
+    state[stateKey] = v;
+    const disp = document.getElementById(displayId);
+    if (disp) disp.textContent = decimals ? v.toFixed(decimals) : v;
+    // Extra display for OAT: show °F
+    if (stateKey === 'oat') {
+      const f = (v * 9/5 + 32).toFixed(0);
+      const el = document.getElementById('oatF');
+      if (el) el.textContent = `${f}°F`;
+    }
+    update();
+  });
+}
+
+function bindRadioGroup(name, stateKey) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+    r.addEventListener('change', () => {
+      state[stateKey] = isNaN(r.value) ? r.value : parseInt(r.value);
+      update();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  bindSlider('weight',     'weight',      'weightVal',    'lbs');
+  bindSlider('fuel',       'fuel',        'fuelVal',      'gal');
+  bindSlider('pressAlt',   'pa',          'pressAltVal',  'ft');
+  bindSlider('cruiseAlt',  'cruiseAlt',   'cruiseAltVal', 'ft');
+  bindSlider('oat',        'oat',         'oatVal',       '°C');
+  bindSlider('windSpeed',  'windSpeed',   'windSpeedVal', 'kts');
+  bindSlider('destAlt',    'destAlt',     'destAltVal',   'ft');
+
+  // Safety margin slider (separate handler to show % suffix)
+  const smSlider = document.getElementById('safetyMargin');
+  smSlider.addEventListener('input', () => {
+    document.getElementById('safetyBadge').textContent = smSlider.value + '%';
+    state.safetyMargin = parseInt(smSlider.value);
+    update();
+  });
+
+  bindRadioGroup('windDir', 'windDir');
+  bindRadioGroup('pwr', 'pwr');
+  bindRadioGroup('mix', 'mix');
+
+  // Init OAT °F display
+  const initOAT = (15 * 9/5 + 32).toFixed(0);
+  const oatFEl = document.getElementById('oatF');
+  if (oatFEl) oatFEl.textContent = initOAT + '°F';
+
+  update();
+});
+</script>
+</body>
+</html>
